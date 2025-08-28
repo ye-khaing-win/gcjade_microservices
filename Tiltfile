@@ -40,38 +40,36 @@ k8s_yaml('./infra/development/k8s/api-gateway-deployment.yaml')
 k8s_resource('api-gateway', port_forwards=8081,
              resource_deps=['api-gateway-compile'], labels="services")
 ### End of API Gateway ###
-### Trip Service ###
+### Catalogue Service ###
 
-# Uncomment once we have a trip service
+catalogue_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/catalogue-service ./services/catalogue-service/cmd/main.go'
+if os.name == 'nt':
+  catalogue_compile_cmd = './infra/development/docker/catalogue-build.bat'
 
-#trip_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/trip-service ./services/trip-service/cmd/main.go'
-#if os.name == 'nt':
-#  trip_compile_cmd = './infra/development/docker/trip-build.bat'
+local_resource(
+  'catalogue-service-compile',
+  catalogue_compile_cmd,
+  deps=['./services/catalogue-service', './shared'], labels="compiles")
 
-# local_resource(
-#   'trip-service-compile',
-#   trip_compile_cmd,
-#   deps=['./services/trip-service', './shared'], labels="compiles")
+docker_build_with_restart(
+  'ride-sharing/catalogue-service',
+  '.',
+  entrypoint=['/app/build/catalogue-service'],
+  dockerfile='./infra/development/docker/catalogue-service.Dockerfile',
+  only=[
+    './build/catalogue-service',
+    './shared',
+  ],
+  live_update=[
+    sync('./build', '/app/build'),
+    sync('./shared', '/app/shared'),
+  ],
+)
 
-# docker_build_with_restart(
-#   'ride-sharing/trip-service',
-#   '.',
-#   entrypoint=['/app/build/trip-service'],
-#   dockerfile='./infra/development/docker/trip-service.Dockerfile',
-#   only=[
-#     './build/trip-service',
-#     './shared',
-#   ],
-#   live_update=[
-#     sync('./build', '/app/build'),
-#     sync('./shared', '/app/shared'),
-#   ],
-# )
+k8s_yaml('./infra/development/k8s/catalogue-service-deployment.yaml')
+k8s_resource('catalogue-service', resource_deps=['catalogue-service-compile'], labels="services")
 
-# k8s_yaml('./infra/development/k8s/trip-service-deployment.yaml')
-# k8s_resource('trip-service', resource_deps=['trip-service-compile'], labels="services")
-
-### End of Trip Service ###
+### End of catalogue Service ###
 ### Web Frontend ###
 
 docker_build(

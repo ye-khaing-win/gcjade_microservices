@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogue-service
+  template:
+    metadata:
+      labels:
+        app: catalogue-service
+    spec:
+      containers:
+        - name: catalogue-service
+          image: ride-sharing/catalogue-service
+          ports:
+            - containerPort: 9092
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue-service
+spec:
+  selector:
+    app: catalogue-service
+  ports:
+    - port: 9092
+      name: grpc
+      targetPort: 9092
+  type: ClusterIP
+
