@@ -5,6 +5,7 @@ import (
 	"gcjade/services/catalogue-service/internal/infrastructure/grpc"
 	"gcjade/services/catalogue-service/internal/infrastructure/repository"
 	"gcjade/services/catalogue-service/internal/service"
+	"gcjade/shared/db"
 	grpcsvr "google.golang.org/grpc"
 	"log"
 	"net"
@@ -16,11 +17,22 @@ import (
 var GrpcAddr = ":9092"
 
 func main() {
-	repo := repository.NewInmemRepository()
-	categoryService := service.NewCategoryService(repo)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	mongoConfig := db.NewMongoConfig(os.Getenv("MONGO_URI"), os.Getenv("MONGO_DATABASE"))
+	mongoClient, err := db.NewMongoClient(ctx, mongoConfig)
+	if err != nil {
+		log.Fatalf("failed to create mongo client: %v", err)
+	}
+	defer mongoClient.Disconnect(ctx)
+	mongoDB := db.GetDatabase(mongoClient, mongoConfig)
+
+	log.Println(mongoDB.Name())
+
+	//repo := repository.NewInmemRepository()
+	categoryRepo := repository.NewCategoryRepository(mongoDB)
+	categoryService := service.NewCategoryService(categoryRepo)
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)

@@ -22,6 +22,7 @@ func main() {
 
 	mux.HandleFunc("POST /categories", enableCORS(handleCreateCategory))
 	mux.HandleFunc("GET /categories", enableCORS(handleListCategories))
+	mux.HandleFunc("GET /categories/{id}", enableCORS(handleFindCategoryByID))
 
 	server := &http.Server{
 		Addr:    httpAddr,

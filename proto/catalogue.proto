@@ -9,12 +9,7 @@ option go_package = "shared/proto/catalogue;catalogue";
 service CatalogueService {
   rpc CreateCategory(CreateCategoryRequest) returns (Category);
   rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
-}
-
-
-message CreateCategoryRequest {
-  string name = 1;
-  string description = 2;
+  rpc FindCategoryByID(FindCategoryByIDRequest) returns (Category);
 }
 
 message Category {
@@ -23,8 +18,17 @@ message Category {
   string description = 3;
 }
 
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+}
+
 message ListCategoriesRequest {}
 
 message ListCategoriesResponse {
   repeated Category categories = 1;
+}
+
+message FindCategoryByIDRequest {
+  string id = 1;
 }

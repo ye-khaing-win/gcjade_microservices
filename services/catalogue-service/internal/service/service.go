@@ -22,3 +22,7 @@ func (s *CategoryService) Create(ctx context.Context, category *domain.Category)
 func (s *CategoryService) List(ctx context.Context) ([]*domain.Category, error) {
 	return s.repo.List(ctx)
 }
+
+func (s *CategoryService) FindByID(ctx context.Context, id string) (*domain.Category, error) {
+	return s.repo.FindByID(ctx, id)
+}

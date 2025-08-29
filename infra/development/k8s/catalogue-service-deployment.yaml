@@ -24,6 +24,17 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-credentials
+                  key: uri
+            - name: MONGO_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-credentials
+                  key: database
 ---
 apiVersion: v1
 kind: Service

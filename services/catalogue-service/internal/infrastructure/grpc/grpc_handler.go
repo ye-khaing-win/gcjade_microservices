@@ -2,11 +2,14 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"gcjade/services/catalogue-service/internal/domain"
+	"gcjade/services/catalogue-service/internal/infrastructure/repository"
 	pb "gcjade/shared/proto/catalogue"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
-	"log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"time"
 )
 
@@ -27,15 +30,13 @@ func NewHandler(server *grpc.Server, categoryService domain.CategoryService) *Ha
 func (h *Handler) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.Category, error) {
 	category, err := h.categoryService.Create(ctx, &domain.Category{
 		ID:          primitive.NewObjectID(),
-		Name:        req.Name,
-		Description: req.Description,
+		Name:        req.GetName(),
+		Description: req.GetDescription(),
 		CreatedAt:   time.Now(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to create category: %v", err)
 	}
-
-	log.Printf("Category created: %+v", category)
 
 	return &pb.Category{
 		Id:          category.ID.Hex(),
@@ -47,7 +48,7 @@ func (h *Handler) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 func (h *Handler) ListCategories(ctx context.Context, req *pb.ListCategoriesRequest) (*pb.ListCategoriesResponse, error) {
 	categories, err := h.categoryService.List(ctx)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to list categories: %v", err)
 	}
 
 	var categoryList []*pb.Category
@@ -61,4 +62,24 @@ func (h *Handler) ListCategories(ctx context.Context, req *pb.ListCategoriesRequ
 	return &pb.ListCategoriesResponse{
 		Categories: categoryList,
 	}, nil
+}
+
+func (h *Handler) FindCategoryByID(ctx context.Context, req *pb.FindCategoryByIDRequest) (*pb.Category, error) {
+	id := req.GetId()
+
+	category, err := h.categoryService.FindByID(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrCategoryNotFound):
+			return nil, status.Errorf(codes.NotFound, err.Error())
+		}
+		return nil, err
+	}
+
+	return &pb.Category{
+		Id:          category.ID.Hex(),
+		Name:        category.Name,
+		Description: category.Description,
+	}, err
+
 }

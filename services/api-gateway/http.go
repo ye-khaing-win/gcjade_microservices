@@ -52,6 +52,7 @@ func handleListCategories(w http.ResponseWriter, r *http.Request) {
 
 	res, err := catalogueService.Client.ListCategories(r.Context(), &pb.ListCategoriesRequest{})
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "failed to list categories", http.StatusInternalServerError)
 		return
 	}
@@ -59,4 +60,31 @@ func handleListCategories(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, contracts.APIResponse{
 		Data: res.Categories,
 	})
+}
+
+func handleFindCategoryByID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	log.Println("ID: ", id)
+
+	catalogueService, err := grpc_clients.NewCatalogueServiceClient()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "failed to create catalog service client", http.StatusInternalServerError)
+		return
+	}
+	defer catalogueService.Close()
+
+	res, err := catalogueService.Client.FindCategoryByID(r.Context(), &pb.FindCategoryByIDRequest{
+		Id: id,
+	})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	writeJSON(w, http.StatusCreated, contracts.APIResponse{
+		Data: res,
+	})
+
 }
